@@ -26,16 +26,16 @@ public class User implements UserDetails { // Implement UserDetails để Spring
     private String avatarUrl;
 
     // --- Thông tin cấu hình sau khi đăng ký ---
-    private String nationality; // Quốc tịch
-    private String houseName; // Tên nhà (VD: Vinh's Smart Home)
-    private String address; // Địa chỉ
+    // private String nationality; // Quốc tịch
+    // private String houseName; // Tên nhà (VD: Vinh's Smart Home)
+    // private String address; // Địa chỉ
 
     @Enumerated(EnumType.STRING)
     private AuthProvider provider;
     private String providerId;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Room> rooms;
+    private List<House> houses;
 
     // --- Các hàm Override của UserDetails ---
 
