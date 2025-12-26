@@ -1,4 +1,4 @@
-package com.phanvanvinh.doan.security.jwt; // Nhớ sửa package cho đúng project của vợ
+package com.phanvanvinh.doan.security.jwt;
 
 import com.phanvanvinh.doan.service.impl.UserDetailsServiceImpl;
 import com.phanvanvinh.doan.util.JwtUtils;
@@ -30,29 +30,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            // 1. Lấy JWT từ Header request
             String jwt = parseJwt(request);
-
-            // 2. Kiểm tra JWT có hợp lệ không
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
+                String email = jwtUtils.getUserNameFromJwtToken(jwt);
 
-                // 3. Lấy username (email) từ chuỗi JWT
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                // --- ĐOẠN NÀY LÀ QUAN TRỌNG NHẤT ---
+                try {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 4. Lấy thông tin người dùng từ Database
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (Exception e) {
+                    // NẾU KHÔNG TÌM THẤY USER TRONG DB -> TRẢ VỀ LỖI 401 NGAY LẬP TỨC
 
-                // 5. Set thông tin người dùng vào SecurityContext (để Controller dùng được)
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    // --- ĐÃ SỬA: Dùng dấu + thay vì dấu , ---
+                    logger.error("User not found in Database: " + e.getMessage());
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                    response.getWriter().write("{\"error\": \"UserNotFound\", \"message\": \"User no longer exists\"}");
+                    return; // Dừng luôn, không cho đi tiếp nữa
+                }
+                // ------------------------------------
             }
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e);
+            // --- ĐÃ SỬA: Dùng dấu + thay vì dấu , ---
+            logger.error("Cannot set user authentication: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

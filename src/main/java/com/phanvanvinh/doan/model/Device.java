@@ -2,6 +2,7 @@ package com.phanvanvinh.doan.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "devices")
@@ -11,21 +12,18 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name; // Ví dụ: Đèn trần, Quạt
+    private String name; // Tên thiết bị (vd: Đèn trần)
+    private String type; // Loại: LIGHT, FAN, AC...
 
-    // Loại thiết bị: RELAY (bật tắt), SENSOR (cảm biến)
-    private String type;
+    @Column(unique = true)
+    private String macAddress; // ĐỊNH DANH DUY NHẤT CỦA ESP32
 
-    // Topic MQTT để gửi lệnh xuống (VD: home/room1/light/set)
-    private String mqttTopicPub;
+    private boolean status; // true = ON, false = OFF
 
-    // Topic MQTT để nhận dữ liệu lên (VD: home/room1/sensor)
-    private String mqttTopicSub;
-
-    // Trạng thái hiện tại (ON/OFF hoặc giá trị nhiệt độ)
-    private String lastValue;
-
+    // Liên kết: Nhiều Device thuộc 1 Room
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
+
+    private LocalDateTime createdAt = LocalDateTime.now();
 }
