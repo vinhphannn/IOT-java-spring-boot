@@ -1,5 +1,7 @@
 package com.phanvanvinh.doan.model;
 
+import com.phanvanvinh.doan.model.DeviceType;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -11,19 +13,28 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name; // Ví dụ: Đèn trần, Quạt
+    @Column(unique = true, nullable = false)
+    private String macAddress; // QUAN TRỌNG: Ví dụ "AA:BB:CC:11:22:33"
 
-    // Loại thiết bị: RELAY (bật tắt), SENSOR (cảm biến)
-    private String type;
+    private String name; // Ví dụ: Đèn trần
 
-    // Topic MQTT để gửi lệnh xuống (VD: home/room1/light/set)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DeviceType type;
+    // Topic để Server gửi lệnh xuống (Subscribe trên ESP)
+    // VD: home/device/AA:BB:CC:11:22:33/set
     private String mqttTopicPub;
 
-    // Topic MQTT để nhận dữ liệu lên (VD: home/room1/sensor)
+    // Topic để Server nhận dữ liệu (Publish từ ESP)
+    // VD: home/device/AA:BB:CC:11:22:33/status
     private String mqttTopicSub;
 
-    // Trạng thái hiện tại (ON/OFF hoặc giá trị nhiệt độ)
     private String lastValue;
+
+    // --- ĐÂY LÀ DÒNG VỢ ĐANG THIẾU ---
+    @Column(columnDefinition = "boolean default false")
+    private Boolean status = false; // Mặc định là Tắt (false)
+    // ---------------------------------
 
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false)
